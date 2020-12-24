@@ -221,7 +221,6 @@ void loop()
   {
     analogValue = analogRead(ANA);
     Input = 1024 - analogValue;
-    Serial.println("test " + String(now));
     previousMeasurementMillis = now;
   }
 
