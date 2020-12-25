@@ -10,13 +10,19 @@
 #include <EEPROM.h>
 #include <WiFiUdp.h>
 #include <NTPClient.h>
+#include <ThingSpeak.h>
+#include "secrets.h"
 
 #ifndef STASSID
-#define STASSID "MYSSID"
-#define STAPSK "MYPASSWORD"
+#define STASSID "cactus"
+#define STAPSK "Ikwilgraaginternetnu!"
 #endif
 
 ESP8266WebServer server(80);
+WiFiClient client;
+
+unsigned long myChannelNumber = SECRET_CH_ID;
+const char *myWriteAPIKey = SECRET_WRITE_APIKEY;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -26,6 +32,7 @@ const char *password = STAPSK;
 
 double analogValue = 0.0;
 long previousMeasurementMillis = 0;
+long previousThingspeakMillis = 0;
 
 double setPoint = 400;
 int highValue = 400;
@@ -33,7 +40,7 @@ int lowValue = 200;
 int offset = 0;
 
 double Input, Output;
-PID myPID(&Input, &Output, &setPoint, 1, 10, 2, DIRECT);
+PID myPID(&Input, &Output, &setPoint, 2, 5, 1, DIRECT);
 int WindowSize = 5000;
 unsigned long windowStartTime;
 
@@ -198,6 +205,7 @@ void setup()
   windowStartTime = millis();
   myPID.SetOutputLimits(0, WindowSize);
   myPID.SetMode(AUTOMATIC);
+  ThingSpeak.begin(client);
 }
 
 void loop()
@@ -221,7 +229,22 @@ void loop()
   {
     analogValue = analogRead(ANA);
     Input = 1024 - analogValue;
+
     previousMeasurementMillis = now;
+  }
+
+  if (now - previousThingspeakMillis > 20000)
+  {
+    int x = ThingSpeak.writeField(myChannelNumber, 1, (float)Input, myWriteAPIKey);
+    if (x == 200)
+    {
+      Serial.println("Channel update successful.");
+    }
+    else
+    {
+      Serial.println("Problem updating channel. HTTP error code " + String(x));
+    }
+    previousThingspeakMillis = now;
   }
 
   myPID.Compute();
