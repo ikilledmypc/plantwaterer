@@ -14,8 +14,8 @@
 #include "secrets.h"
 
 #ifndef STASSID
-#define STASSID "cactus"
-#define STAPSK "Ikwilgraaginternetnu!"
+#define STASSID ""
+#define STAPSK ""
 #endif
 
 ESP8266WebServer server(80);
